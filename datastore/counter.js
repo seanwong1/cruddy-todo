@@ -47,10 +47,6 @@ exports.getNextUniqueId = (callback) => {
       writeCounter((count + 1), callback);
     }
   });
-  //readCounter
-  //increment counter
-  //writeCounter
-
 };
 
 
