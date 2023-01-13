@@ -1,4 +1,3 @@
-//
 const fs = require('fs');
 const path = require('path');
 const _ = require('underscore');
@@ -27,10 +26,19 @@ exports.create = (text, callback) => {
 };
 
 exports.readAll = (callback) => {
-  var data = _.map(items, (text, id) => {
-    return { id, text };
+//Use the file where id's are stored to loop through each id
+//[{id: 001.txt, text: 001.txt}];
+  fs.readdir(exports.dataDir, (err, files) => {
+    if (err) {
+      console.log(err);
+      callback(err, null);
+    } else {
+      var data = _.map(files, (file) => {
+        return { id: file.slice(0, file.length - 4), text: file.slice(0, file.length - 4) };
+      });
+      callback(null, data);
+    }
   });
-  callback(null, data);
 };
 
 exports.readOne = (id, callback) => {
