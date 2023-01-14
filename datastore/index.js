@@ -56,7 +56,7 @@ var promiseReadAll = () => {
         getAllText((promises, id) => promises.then((allTextInfo) => {
           var data = [];
           for (var i = 0; i < allTextInfo.length; i++) {
-            data.push(allTextInfo[i], id[i]);
+            data.push({text: allTextInfo[i].toString(), id: id[i]});
           }
           resolve(data);
         }));
