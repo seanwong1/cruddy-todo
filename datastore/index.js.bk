@@ -9,27 +9,23 @@ var items = {};
 
 // Public API - Fix these CRUD functions ///////////////////////////////////////
 
-var promiseCreate = (text) => {
-  return new Promise((resolve, reject) => {
-    counter.promiseGetNextUniqueId()
-      .then((id) => {
-        items[id] = text;
-        fs.appendFile(path.join(exports.dataDir, id + '.txt'), text, (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve({ id, text });
-          }
-        });
-      })
-      .catch((err) => reject(err));
+exports.create = (text, callback) => {
+  counter.getNextUniqueId((err, id) => {
+    if (err) {
+      console.log('ERROR', err);
+    } else {
+      items[id] = text;
+      fs.appendFile(path.join(exports.dataDir, id + '.txt'), text, (err) => {
+        if (err) {
+          console.log('ERROR', err);
+          callback(err, null);
+        } else {
+          callback(null, { id, text });
+        }
+      });
+    }
   });
 };
-
-exports.create = (text, callback) => {
-  promiseCreate(text).then((text) => callback(null, text)).catch((err) => callback(err, null));
-};
-
 
 var getText = function(fileName) {
   return fs.readFileAsync(path.join(exports.dataDir, fileName));
@@ -37,36 +33,34 @@ var getText = function(fileName) {
 
 var getAllText = function(callback) {
   var promises = [];
-  var id = [];
   return fs.readdirAsync(exports.dataDir).then((files) => {
     for (var i = 0; i < files.length; i++) {
       promises.push(getText(files[i]));
-      id.push(files[i].slice(0, files[i].length - 4));
     }
-    callback(Promise.all(promises), id);
-  });
-};
-
-var promiseReadAll = () => {
-  return new Promise((resolve, reject) => {
-    fs.readdir(exports.dataDir, (err, files) => {
-      if (err) {
-        reject(err);
-      } else {
-        getAllText((promises, id) => promises.then((allTextInfo) => {
-          var data = [];
-          for (var i = 0; i < allTextInfo.length; i++) {
-            data.push(allTextInfo[i], id[i]);
-          }
-          resolve(data);
-        }));
-      }
-    });
+    callback(Promise.all(promises));
   });
 };
 
 exports.readAll = (callback) => {
-  promiseReadAll().then((data) => callback(null, data)).catch((err) => callback(err, null));
+//Use the file where id's are stored to loop through each id
+//[{id: 001.txt, text: 001.txt}];
+  fs.readdir(exports.dataDir, (err, files) => {
+    if (err) {
+      console.log(err);
+      callback(err, null);
+    } else {
+      var data = _.map(files, (file) => {
+        return {id: file.slice(0, file.length - 4), text: undefined};
+      });
+      getAllText((promises) => promises.then((textArr) => {
+        for (var i = 0; i < textArr.length; i++) {
+          data[i].text = textArr[i].toString();
+        }
+        callback(null, data);
+      }));
+      //callback(null, Promise.all(data.text));
+    }
+  });
 };
 
 

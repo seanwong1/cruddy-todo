@@ -15,38 +15,43 @@ const zeroPaddedNumber = (num) => {
   return sprintf('%05d', num);
 };
 
-const readCounter = (callback) => {
-  fs.readFile(exports.counterFile, (err, fileData) => {
-    if (err) {
-      callback(null, 0);
-    } else {
-      callback(null, Number(fileData));
-    }
+const readCounter = () => {
+  return new Promise((resolve, reject) => {
+    fs.readFile(exports.counterFile, (err, fileData) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(Number(fileData));
+      }
+    });
   });
 };
 
-const writeCounter = (count, callback) => {
-  var counterString = zeroPaddedNumber(count);
-  fs.writeFile(exports.counterFile, counterString, (err) => {
-    if (err) {
-      throw ('error writing counter');
-    } else {
-      callback(null, counterString);
-    }
+const writeCounter = (count) => {
+  return new Promise((resolve, reject) => {
+    var counterString = zeroPaddedNumber(count);
+    fs.writeFile(exports.counterFile, counterString, (err) => {
+      if (err) {
+        reject(new Error('error writing counter'));
+      } else {
+        resolve(counterString);
+      }
+    });
   });
 };
 
 // Public API - Fix this function //////////////////////////////////////////////
 
-exports.getNextUniqueId = (callback) => {
-  readCounter((err, count) => {
-    if (err) {
-      console.log("ERROR", err);
-      callback(err, null);
-    } else {
-      writeCounter((count + 1), callback);
-    }
+exports.promiseGetNextUniqueId = () => {
+  return new Promise((resolve, reject) => {
+    readCounter().then((count) => {
+      writeCounter(count + 1).then((id) => resolve(id)).catch((err) => reject(err));
+    }).catch((err) => reject(err));
   });
+};
+
+exports.getNextUniqueId = (callback) => {
+  exports.promiseGetNextUniqueId().then((id) => callback(null, id)).catch((err) => callback(err, null));
 };
 
 
